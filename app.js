@@ -7,7 +7,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const jwt = require('jsonwebtoken');
 const secret = process.env.JWT_SECRET;
-const { DB_USERNAME, DB_PASSWORD, DB_NAME } = process.env;
+const { POSTGRES_URL } = process.env;
 
 const PORT = 3000;
 
