@@ -5,11 +5,10 @@ const { Manga, Anime } = require('./models');
 const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const jwt = require('jsonwebtoken');
-const secret = process.env.JWT_SECRET;
-const { POSTGRES_URL } = process.env;
+const {Op} = require("sequelize");
+require ('dotenv').config();
 
-const PORT = 3000;
+const { DB_USERNAME, DB_PASSWORD, DB_NAME, PORT } = process.env;
 
 const options = {
   definition: {
@@ -23,17 +22,6 @@ const options = {
 };
 
 const swaggerSpec = swaggerJsdoc(options);
-
-function authenticateToken(req, res, next) {
-  const token = req.headers['authorization'];
-  if (!token) return res.status(401).json({ error: 'Access denied, no token provided' });
-
-  jwt.verify(token, secret, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
-    req.user = user;
-    next();
-  });
-}
 
 app.use(bodyParser.json());
 
@@ -241,6 +229,7 @@ app.get('/mangas', async (req, res) => {
   res.json(mangas);
 });
 
+
 /**
  * @swagger
  * /mangas/{id}:
@@ -317,6 +306,36 @@ app.delete('/mangas/:id', async (req, res) => {
 
 /**
  * @swagger
+ * /mangas/count:
+ *   get:
+ *     summary: Compter tous les mangas existants
+ *     tags: [Manga]
+ *     responses:
+ *       200:
+ *         description: Nombre total de mangas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: integer
+ *                   description: Nombre total de mangas
+ *       500:
+ *         description: Erreur serveur
+ */
+app.get('/mangas/count', async (req, res) => {
+  try {
+    const count = await Manga.count();
+    res.status(200).json({ count });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+
+/**
+ * @swagger
  * /animes:
  *   post:
  *     summary: Créer un nouvel anime
@@ -337,6 +356,71 @@ app.delete('/mangas/:id', async (req, res) => {
  *       500:
  *         description: Erreur serveur
  */
+
+/**
+ * @swagger
+ * /mangas/search:
+ *   get:
+ *     summary: Search for mangas
+ *     tags: [Manga]
+ *     description: Retrieve a list of mangas based on search criteria.
+ *     parameters:
+ *       - in: query
+ *         name: title
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The title of the manga to search for.
+ *       - in: query
+ *         name: author
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The author of the manga to search for.
+ *       - in: query
+ *         name: genre
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The genre of the manga to search for.
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [completed, ongoing]
+ *         required: false
+ *         description: The status of the manga to search for (either "completed" or "ongoing").
+ *     responses:
+ *       200:
+ *         description: A list of mangas that match the search criteria.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Manga'
+ *       400:
+ *         description: Bad request. Invalid search criteria.
+ *       500:
+ *         description: Internal server error.
+ */
+app.get('/mangas/search', async (req, res) => {
+  const { title, author, status, rating } = req.query;
+  const where = {};
+
+  if (title) where.title = title;
+  if (author) where.author = author;
+  if (status) where.status = status;
+  if (rating) where.rating = rating;
+    try {
+    const mangas = await Manga.findAll({ where });
+    res.status(200).json(mangas);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+
 app.post('/animes', async (req, res) => {
   const newAnime = await Anime.create(req.body);
   res.status(201).json(newAnime);
@@ -439,11 +523,73 @@ app.delete('/animes/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /animes/explore:
+ *   get:
+ *     summary: Explorer les animes par date de sortie
+ *     tags: [Anime]
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Année de sortie de l'anime
+ *     responses:
+ *       200:
+ *         description: Liste des animes sortis cette année
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Anime'
+ *     schemas:
+ *       Anime:
+ *         type: object
+ *         required:
+ *           - title
+ *           - type
+ *           - episodes
+ *           - releaseDate
+ *           - status
+ *         properties:
+ *           id:
+ *             type: integer
+ *             description: ID auto-généré
+ *           title:
+ *             type: string
+ *             description: Le titre de l'anime
+ *           type:
+ *             type: string
+ *             enum: [anime, drama]
+ *             description: Type de l'œuvre
+ *           episodes:
+ *             type: integer
+ *             description: Nombre d'épisodes
+ *           releaseDate:
+ *             type: integer
+ *             description: Année de sortie
+ *           status:
+ *             type: string
+ *             enum: [ongoing, completed]
+ *             description: Statut de l'anime
+ */
+app.get('/animes/explore', async (req, res) => {
+    const { year } = req.query;
+    const animes = await Anime.findAll({
+        where: {
+        releaseDate: {
+            [Op.between]: [`${year}-01-01`, `${year}-12-31`]
+        }
+        }
+    });
+    res.json(animes);
+});
 
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log('API documentation available at http://localhost:3000/api-docs');
+    console.log(`Server is running on port ${PORT}`);
 });
