@@ -16,6 +16,7 @@ module.exports = {
     test: {
         use_env_variable: 'POSTGRES_URL',
         dialect: 'postgres',
+        dialectModule: pg,
         dialectOptions: {
             ssl: {
                 require: true,
@@ -26,6 +27,7 @@ module.exports = {
     production: {
         use_env_variable: 'POSTGRES_URL',
         dialect: 'postgres',
+        dialectModule: pg,
         dialectOptions: {
             ssl: {
                 require: true,
