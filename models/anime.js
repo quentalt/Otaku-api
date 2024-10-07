@@ -1,4 +1,5 @@
 'use strict';
+
 const {
   Model
 } = require('sequelize');
@@ -15,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   Anime.init({
     title: DataTypes.STRING,
-    type: DataTypes.STRING,
+    type: DataTypes.ENUM('TV', 'OVA', 'Movie', 'Special', 'ONA'),
     episodes: DataTypes.INTEGER,
     studio: DataTypes.STRING,
     genre: DataTypes.STRING,

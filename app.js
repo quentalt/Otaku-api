@@ -5,10 +5,35 @@ const { Manga, Anime } = require('./models');
 const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const {Op} = require("sequelize");
+const {Op, Sequelize} = require("sequelize");
 require ('dotenv').config();
 
-const { DB_USERNAME, DB_PASSWORD, DB_NAME, PORT } = process.env;
+const env = process.env.NODE_ENV || 'development';
+const config = require('./config/config');
+const configEnv = config[env];
+
+let sequelize;
+if (configEnv) {
+  sequelize = new Sequelize(process.env[configEnv.use_env_variable], configEnv);
+} else {
+  sequelize = new Sequelize(
+      configEnv.database,
+      configEnv.username,
+      configEnv.password,
+      configEnv
+  );
+}
+
+sequelize.authenticate()
+    .then(() => {
+      console.log('Connection to the database has been established successfully.');
+    })
+    .catch(err => {
+      console.error('Unable to connect to the database:', err);
+    });
+
+
+const PORT = process.env.PORT || 3000;
 
 const options = {
   definition: {
@@ -333,6 +358,46 @@ app.get('/mangas/count', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /mangas/explore:
+ *   get:
+ *     summary: Explorer les mangas par date de sortie
+ *     tags: [Manga]
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Année de sortie du manga
+ *     responses:
+ *       200:
+ *         description: Liste des mangas sortis cette année
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Manga'
+ *       500:
+ *         description: Erreur serveur
+ */
+app.get('/mangas/explore', async (req, res) => {
+  const { year } = req.query;
+  try {
+    const mangas = await Manga.findAll({
+      where: {
+        releaseDate: {
+          [Op.between]: [`${year}-01-01`, `${year}-12-31`]
+        }
+      }
+    });
+    res.status(200).json(mangas);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 
 /**
  * @swagger
@@ -356,6 +421,45 @@ app.get('/mangas/count', async (req, res) => {
  *       500:
  *         description: Erreur serveur
  */
+
+/**
+ * @swagger
+ * /mangas/{id}:
+ *   get:
+ *     summary: Récupérer un manga par ID
+ *     tags: [Manga]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID du manga
+ *     responses:
+ *       200:
+ *         description: Détails du manga
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Manga'
+ *       404:
+ *         description: Manga non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+app.get('/mangas/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const manga = await Manga.findByPk(id);
+    if (manga) {
+      res.status(200).json(manga);
+    } else {
+      res.status(404).json({ error: 'Manga not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
 
 /**
  * @swagger
@@ -412,14 +516,13 @@ app.get('/mangas/search', async (req, res) => {
   if (author) where.author = author;
   if (status) where.status = status;
   if (rating) where.rating = rating;
-    try {
+  try {
     const mangas = await Manga.findAll({ where });
     res.status(200).json(mangas);
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
-
 
 app.post('/animes', async (req, res) => {
   const newAnime = await Anime.create(req.body);
@@ -522,6 +625,47 @@ app.delete('/animes/:id', async (req, res) => {
     res.status(404).json({ error: 'Anime not found' });
   }
 });
+
+/**
+ * @swagger
+ * /animes/type/{type}:
+ *   get:
+ *     summary: Récupérer les animes par type
+ *     tags: [Anime]
+ *     parameters:
+ *       - in: path
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [TV, OVA, Movie, Special, ONA]
+ *         required: true
+ *         description: Type de l'anime
+ *     responses:
+ *       200:
+ *         description: Liste des animes par type
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Anime'
+ *       500:
+ *         description: Erreur serveur
+ */
+app.get('/animes/type/:type', async (req, res) => {
+  const { type } = req.params;
+  try {
+    const animes = await Anime.findAll({
+      where: {
+        type
+      }
+    });
+    res.status(200).json(animes);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 
 /**
  * @swagger
