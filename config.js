@@ -3,7 +3,7 @@ const pg = require('pg');
 
 module.exports = {
     development: {
-        use_env_variable: 'POSTGRES_DATABASE',
+        use_env_variable: 'POSTGRES_URL',
         dialect: 'postgres',
         dialectModule: pg,
         dialectOptions: {
@@ -14,7 +14,7 @@ module.exports = {
         }
     },
     test: {
-        use_env_variable: 'POSTGRES_DATABASE',
+        use_env_variable: 'POSTGRES_URL',
         dialect: 'postgres',
         dialectOptions: {
             ssl: {
@@ -24,7 +24,7 @@ module.exports = {
         }
     },
     production: {
-        use_env_variable: 'POSTGRES_DATABASE',
+        use_env_variable: 'POSTGRES_URL',
         dialect: 'postgres',
         dialectOptions: {
             ssl: {
