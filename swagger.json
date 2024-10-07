@@ -1,0 +1,33 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Anime and Manga API",
+    "description": "API documentation for Anime and Manga"
+  },
+  "host": "localhost:5000",
+  "basePath": "/",
+  "schemes": ["http"],
+  "paths": {
+    "/anime": {
+      "get": {
+        "summary": "Get all anime",
+        "responses": {
+          "200": {
+            "description": "A list of anime"
+          }
+        }
+      }
+    },
+    "/manga": {
+      "get": {
+        "summary": "Get all manga",
+        "responses": {
+          "200": {
+            "description": "A list of manga"
+          }
+        }
+      }
+    }
+  }
+}
