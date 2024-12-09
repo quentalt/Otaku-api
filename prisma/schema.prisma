@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Media {
+  id                   Int      @id @default(autoincrement())
+  title                String
+  description          String
+  author               String
+  studio               String?
+  genre                String
+  episodes             Int?
+  chapters             Int?
+  is_completed         Boolean  @default(false)
+  release_year         Int?
+  main_character       String?
+  rating               Float?
+  popularity           Int?
+  tags                 String[]
+  cover_image_url      String?
+  anime_trailer_url    String?
+  manga_publisher      String?
+  is_anime             Boolean  @default(false)
+  is_manga             Boolean  @default(false)
+  arcs                 String[]
+  side_characters      String[]
+  soundtrack_composer  String?
+  openings             String[]
+  endings              String[]
+  adapted_from         String?
+  original_language    String
+  dubbed_languages     String[]
+  duration_per_episode Int?
+  awards               String[]
+  producer             String?
+  director             String?
+  streaming_platforms  String[]
+  manga_volumes        Int?
+  last_update_date     DateTime @default(now())
+  has_live_action      Boolean  @default(false)
+  fanbase_statistics   Json?
+  has_funkopop         Boolean  @default(false)
+  merchandise          String[]
+  official_website     String?
+  spin_offs            String[]
+  has_video_game       Boolean  @default(false)
+  has_novel            Boolean  @default(false)
+  collaborations       String[]
+  box_office_revenue   Float?
+  style                String?
+  memorable_quotes     String[]
+  community_events     String[]
+  cosplay_popularity   Int?
+  age_rating           String?
+  critical_reception   Float
+  release_schedule     String?
+}
